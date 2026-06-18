@@ -1,8 +1,19 @@
+# llm.py
+# ---------------------------------------------------------------------------
+# THE single module that talks to an LLM provider. Everything else in the
+# project calls generate() (for chat) or embed() (for embeddings) and never
+# touches the provider directly. Swapping providers later = changes here only.
+# ---------------------------------------------------------------------------
+
 import ollama
 from typing import Generator, Optional
 
 from . import config
 
+
+# ===========================================================================
+# CHAT (text generation)
+# ===========================================================================
 
 def _call_ollama(messages: list, json_mode: bool) -> Generator[str, None, None]:
     """Provider-specific call for Ollama. Keeps Ollama's specifics isolated."""
@@ -50,7 +61,9 @@ def generate(
         json_mode: If True, ask the model to return valid JSON.
 
     Yields:
-        Response text, token by token, as it streams in.
+        Response text, token by token, as it streams in. (yield = produce values
+        one at a time instead of returning them all at once, so the caller can
+        print tokens as they arrive.)
     """
     messages = []
     if system_prompt:
@@ -67,9 +80,55 @@ def generate(
         raise ValueError(f"Unknown PROVIDER in config: {config.PROVIDER!r}")
 
 
+# ===========================================================================
+# EMBEDDINGS (text -> vector)
+# ===========================================================================
+
+def _embed_ollama(text: str) -> list[float]:
+    """Provider-specific embedding call for Ollama."""
+    try:
+        # ollama.embeddings returns a dict; the vector is under "embedding".
+        response = ollama.embeddings(model=config.EMBED_MODEL, prompt=text)
+        return response["embedding"]
+    except ConnectionError as exc:
+        raise RuntimeError(
+            "Could not reach Ollama. Is it running? "
+            "Start the Ollama app, or run `ollama serve` in a terminal."
+        ) from exc
+
+
+def _embed_azure(text: str) -> list[float]:
+    """Placeholder for Azure embeddings. Implemented later."""
+    raise NotImplementedError(
+        "Azure embeddings not implemented yet. Implement _embed_azure() before "
+        "setting PROVIDER='azure' in config."
+    )
+
+
+def embed(text: str) -> list[float]:
+    """Turn a piece of text into an embedding vector (a list of floats).
+
+    Uses the SAME provider switch as generate(), so chat and embeddings always
+    come from the configured provider. We embed chunks at index time AND
+    questions at query time through this one function — guaranteeing both use
+    the same model (required for the vectors to be comparable).
+    """
+    if config.PROVIDER == "ollama":
+        return _embed_ollama(text)
+    elif config.PROVIDER == "azure":
+        return _embed_azure(text)
+    else:
+        raise ValueError(f"Unknown PROVIDER in config: {config.PROVIDER!r}")
+
+
 if __name__ == "__main__":
-    # Quick smoke test: run `poetry run python -m travel_copilot.llm`
-    print(f"Provider: {config.PROVIDER} | Model: {config.CHAT_MODEL}\n")
+    # Quick smoke test of both functions.
+    print(f"Provider: {config.PROVIDER} | Chat: {config.CHAT_MODEL} | Embed: {config.EMBED_MODEL}\n")
+
+    print("Chat test:")
     for token in generate("Say hello in 3 words."):
         print(token, end="", flush=True)
-    print("\n\nTest complete.")
+
+    print("\n\nEmbed test:")
+    vec = embed("A test sentence about travel.")
+    print(f"Vector length: {len(vec)} | first 5 numbers: {vec[:5]}")
