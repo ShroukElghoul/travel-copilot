@@ -1,0 +1,83 @@
+STAGE 2a — HYBRID SEARCH (BM25 keyword + vector, fused with RRF)
+================================================================
+Note: these show RAW RETRIEVAL (top-k chunks + RRF score), before the LLM answer.
+
+Q1:
+"What is there to see in Aachen?"
+A1:
+1. 's-Hertogenbosch > Introduction (rrf=0.0318)
+2. Aachen > Get in (rrf=0.0302)
+3. Aachen > Get in (rrf=0.026)
+4. Abancay > Go next (rrf=0.0164)
+5. 's-Hertogenbosch > Do (rrf=0.0161)
+
+--- ANALYSIS ---
+Outcome: IMPROVED. Aachen now appears (#2, #3) — vs. ZERO Aachen chunks in Stage 1.
+Why it improved: BM25 matched the literal word "Aachen" and, through RRF fusion,
+  pushed real Aachen chunks into the results. The recall failure is fixed.
+Remaining issue: the top hit is still 's-Hertogenbosch (Introduction), and the
+  Aachen chunks that surfaced are "Get in" (parking, airports) rather than "See".
+  So the right CITY is present but not the most useful SECTION, and not at #1.
+Recall vs precision: RECALL fixed (Aachen present); PRECISION still imperfect
+  (ordering + which section).
+Before/after: Stage 1 = no Aachen at all → Stage 2a = Aachen at #2–3.
+Fix next: cross-encoder re-ranker to reorder by true relevance to "what to SEE".
+
+============================================
+
+Q2:
+"how do I get around in Aarhus?"
+A2:
+1. Aarau > Get around (rrf=0.0318)
+2. Aalborg > Get around (rrf=0.0298)
+3. Abastumani > Get in (rrf=0.0293)
+4. Aarhus > Get in (rrf=0.0262)
+5. Abaiang > Do (rrf=0.0164)
+
+--- ANALYSIS ---
+The arc across all three stages for this query:
+1. Vector-only (Stage 1): wrong cities AND often wrong topic. "Aarhus" lost
+   entirely — a RECALL failure, right content never showed up.
+2. Hybrid (now): right TOPIC and the right city PRESENT (Aarhus at #4), but wrong
+   cities (Aarau, Aalborg) still rank above it. BM25 rescued the keyword, so Aarhus
+   made it into the candidates — recall fixed. But "get around" is a generic phrase
+   every city's section shares, and Aarhus's transport info is split into "Get in",
+   so ordering is off. A PRECISION problem now, not recall.
+3. Re-ranker (next): a cross-encoder reads the full question against each candidate
+   and understands "Aarhus trains" beats "Aarau buses" — pushing the right city to
+   the top. Fixes precision.
+One line: vector-only missed it (recall) → hybrid found it but mis-ordered
+  (precision) → re-ranker orders it right. Each stage fixes the previous one's
+  weakness.
+Note: partly a small-corpus artifact — 20 early-alphabet "Aa..." cities with
+  identical section structure is unusually adversarial for keyword matching;
+  this noise spreads out on the full corpus.
+
+=============================================
+CONCEPTUAL QUESTION (vector's strength — does hybrid keep it?)
+
+Q3:
+"where can I walk around a historic medieval city center?"
+A3:
+1. Aarhus > See (rrf=0.032)
+2. 's-Hertogenbosch > See (rrf=0.0317)
+3. 's-Hertogenbosch > Get around (rrf=0.0303)
+4. Aachen > Introduction (rrf=0.0298)
+5. Aalborg > Get around (rrf=0.0283)
+
+--- ANALYSIS ---
+Outcome: STILL STRONG. The relevant medieval/walkable chunks are present and
+  well-ranked ('s-Hertogenbosch See/Get around, Aachen's medieval Introduction).
+Why this matters: adding BM25 did NOT hurt the conceptual query that vector search
+  already handled well — hybrid kept the dense-search strength while adding the
+  keyword strength. That's the whole point of fusion: cover both, lose neither.
+Recall vs precision: both good; minor precision wobble (Aarhus "See" at #1 is more
+  "free attractions/street life" than strictly "medieval"), which the re-ranker
+  would tidy.
+
+--- STAGE 2a TAKEAWAY (for demo) ---
+Hybrid (BM25 + vector via RRF) fixes the RECALL failures of Stage 1 — proper-noun
+queries (Aachen, Aarhus) now surface the right content — WITHOUT degrading the
+conceptual queries vector search already did well. What remains is a PRECISION gap:
+right candidates present, ordering imperfect. That is the job of the next stage,
+cross-encoder RE-RANKING (Stage 2b / FlashRank).

@@ -1,4 +1,7 @@
-Q1: 
+STAGE 1 — VECTOR SEARCH ONLY (cosine similarity over embeddings)
+================================================================
+
+Q1:
 "What is there to see in Aachen?"
 A1:
 I don't have enough information about Aachen.
@@ -9,6 +12,18 @@ Sources:
   - Aarhus (Cope)
   - Abbottabad (Go next)
   - Abadan (Go next)
+
+--- ANALYSIS ---
+Outcome: FAILED. Not one Aachen chunk retrieved, even though Aachen IS indexed.
+Why: The meaningful token is the proper noun "Aachen". Embeddings encode the
+  general SENTENCE meaning ("what is there to see in a place"), not the specific
+  name, so the model matched the shape of the question and pulled unrelated
+  cities' "Do/Go next" sections.
+Recall vs precision: RECALL failure — the right content never entered the results.
+Good behavior to note: the LLM correctly REFUSED to guess ("I don't have enough
+  information") instead of hallucinating — the system prompt's "answer only from
+  context" rule working as intended.
+Fix: hybrid search (BM25 catches the literal word "Aachen").
 
 ============================================
 
@@ -24,14 +39,28 @@ Sources:
   - Abbottabad (Go next)
   - Abadan (Go next)
 
+--- ANALYSIS ---
+Outcome: FAILED. Same pattern — "Aarhus" (proper noun) lost; wrong cities returned.
+Why: Identical to Q1 — embeddings matched the "how to get around a place" concept
+  but couldn't lock onto the specific city name.
+Recall vs precision: RECALL failure — right content absent.
+Good behavior to note: again the LLM refused to guess rather than inventing facts.
+Fix: hybrid search (BM25 anchors on "Aarhus").
+
 =============================================
+CONCEPTUAL QUESTION (the kind vector search handles WELL)
 
 Q3:
-where can I walk around a historic medieval city center?
+"where can I walk around a historic medieval city center?"
 A3:
-You can walk around a historic medieval city center in 's-Hertogenbosch (Den Bosch), specifically in its well-preserved medieval centre, as described in [Source 5: 's-Hertogenbosch (Introduction)]. Additionally, Aarhus also has a historic city center with many historic buildings and preserved environments that can be explored on foot, such as the Latin Quarter in [Source 2: Aarhus (See)].
-
-In 's-Hertogenbosch, you can walk along the winding streets to see Saint John's Cathedral and visit the market square. You can also explore the old fortifications by walking northwards via certain streets and bastions, as described in [Source 4: 's-Hertogenbosch (See)].
+You can walk around a historic medieval city center in 's-Hertogenbosch (Den Bosch),
+specifically in its well-preserved medieval centre, as described in [Source 5: 's-Hertogenbosch
+(Introduction)]. Additionally, Aarhus also has a historic city center with many
+historic buildings and preserved environments that can be explored on foot, such as
+the Latin Quarter in [Source 2: Aarhus (See)].
+In 's-Hertogenbosch, you can walk along the winding streets to see Saint John's
+Cathedral and visit the market square. You can also explore the old fortifications
+by walking northwards via certain streets and bastions, as described in [Source 4: 's-Hertogenbosch (See)].
 
 Sources:
   - 's-Hertogenbosch (Get around)
@@ -39,3 +68,16 @@ Sources:
   - Aarhus (Understand)
   - 's-Hertogenbosch (See)
   - 's-Hertogenbosch (Introduction)
+
+--- ANALYSIS ---
+Outcome: SUCCESS. Correct chunks retrieved, grounded answer, inline citations.
+Why: This is a CONCEPTUAL query — no rare proper noun, just meaning ("walkable
+  historic medieval centre"). This is exactly the strength of dense/embedding
+  search: matching paraphrased meaning, not exact words. The answer drew real
+  details from the chunks (Saint John's Cathedral, market square, fortifications).
+Recall vs precision: both good here — relevant chunks present and sensibly ordered.
+
+--- STAGE 1 TAKEAWAY (for demo) ---
+Vector-only search is strong on CONCEPTS (Q3) but weak on SPECIFIC KEYWORDS / PROPER
+NOUNS (Q1, Q2). The failures are RECALL failures: the right content never surfaces.
+This is the precise motivation for adding sparse/keyword retrieval (BM25) → Stage 2.
