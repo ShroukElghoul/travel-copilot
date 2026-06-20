@@ -13,7 +13,8 @@ dependencies = [
     "chromadb (>=1.5.9,<2.0.0)",
     "rank-bm25 (>=0.2.2,<0.3.0)",
     "flashrank (>=0.2.10,<0.3.0)",
-    "langchain-core (>=1.4.8,<2.0.0)"
+    "langchain-core (>=1.4.8,<2.0.0)",
+    "simpleeval (>=1.0.7,<2.0.0)"
 ]
 
 

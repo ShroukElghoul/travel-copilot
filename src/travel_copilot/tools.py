@@ -3,24 +3,24 @@
 # PURPOSE: Define the TOOLS the agent can choose to use. A tool = a function +
 # a description the LLM reads to decide WHEN to call it.
 #
-# Right now: one tool — search_travel_guides — which wraps the FULL retrieval
-# stack (hybrid search -> FlashRank re-rank) and returns readable text the agent
-# can use to answer. (The sandboxed calculator tool will be added next, here.)
+# Tools so far:
+#   1. search_travel_guides — wraps the full retrieval stack (hybrid + rerank).
+#   2. calculate           — safely evaluates a math expression (budgets, etc.).
 #
 # Key idea: the LLM decides whether to call a tool based on its NAME + DOCSTRING.
-# So the docstring is not just documentation — it's the agent's instruction
-# manual. Write it to clearly say WHEN to use the tool.
+# So the docstring is the agent's instruction manual — write it to say clearly
+# WHEN to use the tool.
 # ---------------------------------------------------------------------------
 
 from langchain_core.tools import tool
+from simpleeval import simple_eval
 
 from .retrieval.hybrid import HybridRetriever
 from .retrieval.rerank import rerank
 
 
-# Build the retriever ONCE at import time. Creating a HybridRetriever loads the
-# whole corpus from ChromaDB and builds the BM25 index — expensive — so we do it
-# a single time and reuse it on every tool call, rather than rebuilding per call.
+# Build the retriever ONCE at import time (loading the corpus + BM25 is
+# expensive), then reuse it on every call.
 _retriever = HybridRetriever()
 
 
@@ -32,14 +32,9 @@ def search_travel_guides(query: str) -> str:
     how to get around, history, neighborhoods, etc. Input should be a short
     search query describing what travel information you need.
     """
-    # 1. Hybrid retrieval: pull a WIDE candidate set (BM25 + vector via RRF).
     candidates = _retriever.retrieve(query, top_k=20, candidate_k=20)
-
-    # 2. Re-rank those candidates with the cross-encoder, keep the best few.
     top_chunks = rerank(query, candidates, top_k=5)
 
-    # 3. Format the chunks into one readable string the LLM can reason over.
-    #    We include the source (title/section) on each so the agent can cite it.
     if not top_chunks:
         return "No relevant travel information found."
 
@@ -47,15 +42,40 @@ def search_travel_guides(query: str) -> str:
     for chunk in top_chunks:
         source = f"{chunk['title']} ({chunk['section']})"
         blocks.append(f"[{source}]\n{chunk['text']}")
-
     return "\n\n".join(blocks)
 
 
+@tool
+def calculate(expression: str) -> str:
+    """Evaluate a mathematical expression and return the result.
+
+    ALWAYS use this for any arithmetic — budgets, totals, distances, durations,
+    currency sums — instead of doing the math yourself. Input must be a plain
+    math expression, e.g. "5*80 + 200" or "(3+4)*12". Do not include words,
+    currency symbols, or units — only numbers and the operators + - * / ( ).
+    """
+    try:
+        # simple_eval safely evaluates the expression. Unlike Python's eval(),
+        # it does NOT run arbitrary code — no imports, no function calls, no file
+        # or system access — so it's safe to run on LLM-generated input. It only
+        # permits arithmetic, which is exactly what we want here.
+        result = simple_eval(expression)
+        return str(result)
+    except Exception as exc:
+        # If the expression is malformed (or tries something not allowed),
+        # return a clear message instead of crashing the agent.
+        return f"Could not evaluate '{expression}': {exc}"
+
+
 if __name__ == "__main__":
-    # Quick test of the tool on its own.
+    # Quick test of both tools.
     # Run with: poetry run python -m src.travel_copilot.tools
-    #
-    # Note: a @tool-decorated function is called via .invoke({...}) rather than
-    # like a plain function, because LangChain wraps it as a Tool object.
-    result = search_travel_guides.invoke({"query": "what to see in Aachen"})
-    print(result)
+    # (@tool functions are called via .invoke({...}), not like plain functions.)
+    print("calculate test:")
+    print("  5 nights x 80 + 200 flights =",
+          calculate.invoke({"expression": "5*80 + 200"}))
+    print("  bad input =",
+          calculate.invoke({"expression": "import os"}))  # should be refused safely
+
+    print("\nsearch test:")
+    print(search_travel_guides.invoke({"query": "what to see in Aachen"})[:300], "...")
