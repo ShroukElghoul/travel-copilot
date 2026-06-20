@@ -1196,19 +1196,19 @@ google-auth = ["google-auth (>=1.0.1)"]
 
 [[package]]
 name = "langchain-core"
-version = "1.4.7"
+version = "1.4.8"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0.0,>=3.10.0"
 groups = ["main"]
 files = [
-    {file = "langchain_core-1.4.7-py3-none-any.whl", hash = "sha256:bcadd51951140ecdcba98311dbd931ba5de02a5ba8a2288dad5069c1eea2a13d"},
-    {file = "langchain_core-1.4.7.tar.gz", hash = "sha256:7a825d77de0a3f39adbd9d09612a75e85527e14a52c1601089bcc062972d9f2b"},
+    {file = "langchain_core-1.4.8-py3-none-any.whl", hash = "sha256:d84c28b05e3ba8d4271d0827aad5b592ccdaaf986e76768c23503f0a2045e8aa"},
+    {file = "langchain_core-1.4.8.tar.gz", hash = "sha256:5bf1f8411077c904182ad8f975943d36adcbf579c4e017b3a118b719229ebf9a"},
 ]
 
 [package.dependencies]
 jsonpatch = ">=1.33.0,<2.0.0"
-langchain-protocol = ">=0.0.14"
+langchain-protocol = ">=0.0.17"
 langsmith = ">=0.3.45,<1.0.0"
 packaging = ">=23.2.0"
 pydantic = ">=2.7.4,<3.0.0"
@@ -3970,4 +3970,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.12"
-content-hash = "d9eefa0f3ada5c466167f022632a4cca206bcb6311587022e400089e47d9f888"
+content-hash = "18b65a6c11895957b209f91ec64262019d2df90bad0716c3368a88c5622f99e2"

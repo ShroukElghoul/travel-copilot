@@ -12,7 +12,8 @@ dependencies = [
     "langchain-text-splitters (>=1.1.2,<2.0.0)",
     "chromadb (>=1.5.9,<2.0.0)",
     "rank-bm25 (>=0.2.2,<0.3.0)",
-    "flashrank (>=0.2.10,<0.3.0)"
+    "flashrank (>=0.2.10,<0.3.0)",
+    "langchain-core (>=1.4.8,<2.0.0)"
 ]
 
 
