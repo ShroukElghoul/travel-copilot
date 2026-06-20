@@ -6,12 +6,19 @@ Q1:
 "What is there to see in Aachen?"
 A1:
 1. 's-Hertogenbosch > Introduction (rrf=0.0318)
+   Street view in the city
+'s-Hertogenbosch, commonly known as Den Bosch, is a city in the south of the Netherlands and the...
 2. Aachen > Get in (rrf=0.0302)
+   Parking in the town centre costs around  per hour. There is also park and ride available around the outskirts of the tow...
 3. Aachen > Get in (rrf=0.026)
+   Smaller airports within reasonable distance are Weeze () in Germany, Eindhoven airport () in the Netherlands, and "Bruss...
 4. Abancay > Go next (rrf=0.0164)
+   You can visit the Canyon of Apurimac (Cañon de Apurimac) and cross it on a hanging bridge. Take a bus towards Cusco and ...
 5. 's-Hertogenbosch > Do (rrf=0.0161)
+   The Binnendieze, as seen from one of the tour boats
+ Take a boat on the Binnendieze, a river that goes below the houses ...
 
---- ANALYSIS ---
+ --- ANALYSIS ---
 Outcome: IMPROVED. Aachen now appears (#2, #3) — vs. ZERO Aachen chunks in Stage 1.
 Why it improved: BM25 matched the literal word "Aachen" and, through RRF fusion,
   pushed real Aachen chunks into the results. The recall failure is fixed.
@@ -29,10 +36,24 @@ Q2:
 "how do I get around in Aarhus?"
 A2:
 1. Aarau > Get around (rrf=0.0318)
+   The best way to get around is by bus and train. Get a zone dayfare to which is valid for all bus and trains in this zone...
 2. Aalborg > Get around (rrf=0.0298)
+   In the centre it easy to walk by foot. To go further, there is a good public bus system (22 kr for 1½ hr if you pay cash...
 3. Abastumani > Get in (rrf=0.0293)
+   Abastumani is reached by either taxi or marshutka (mini-bus) from the Akhaltsikhe bus station. The drive takes approxima...
 4. Aarhus > Get in (rrf=0.0262)
+   By train
+Arriving at the Aarhus Central Station.
+ 
+
+It is also possible to catch a train to other parts of the Jutland p...
 5. Abaiang > Do (rrf=0.0164)
+   Te Karaaun
+ Island trips – either by Motor bikes or trucks
+ Island walking
+ Beach games
+ Snorkelling
+ Visits to cultural...
 
 --- ANALYSIS ---
 The arc across all three stages for this query:
@@ -54,16 +75,22 @@ Note: partly a small-corpus artifact — 20 early-alphabet "Aa..." cities with
   this noise spreads out on the full corpus.
 
 =============================================
-CONCEPTUAL QUESTION (vector's strength — does hybrid keep it?)
-
+Test with a more conceptual question (which vector search handles well)
 Q3:
-"where can I walk around a historic medieval city center?"
+where can I walk around a historic medieval city center?
 A3:
 1. Aarhus > See (rrf=0.032)
+   Many attractions and events in Aarhus are free, and there is an interesting street life, so even on a budget you can hav...
 2. 's-Hertogenbosch > See (rrf=0.0317)
+   's-Hertogenbosch is a medieval city and among the oldest cities in the Netherlands. As the city center is historically p...
 3. 's-Hertogenbosch > Get around (rrf=0.0303)
+   Almost every street in the historic centre is worth simply strolling along for great views
+On foot
+Everything within the...
 4. Aachen > Introduction (rrf=0.0298)
+   Apart from its medieval significance and a wealth of preserved artefacts, Aachen is also known for its springs, which ha...
 5. Aalborg > Get around (rrf=0.0283)
+   In the centre it easy to walk by foot. To go further, there is a good public bus system (22 kr for 1½ hr if you pay cash...
 
 --- ANALYSIS ---
 Outcome: STILL STRONG. The relevant medieval/walkable chunks are present and
