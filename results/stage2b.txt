@@ -1,0 +1,171 @@
+Q1: 
+"What is there to see in Aachen?"
+A1:
+HYBRID order (before re-ranking):
+  1. 's-Hertogenbosch > Introduction
+  2. Aachen > Get in
+  3. Aachen > Get in
+  4. Abancay > Go next
+  5. 's-Hertogenbosch > Do
+
+RE-RANKED order (after FlashRank):
+  1. Aachen > Get around (score=0.85589998960495)
+     The old town is best explored on foot and orientation signs can be found all around. Apart from the centre, Aachen at a whole is a fairly large city.
+...
+  2. Aachen > Get in (score=0.3003000020980835)
+     Parking in the town centre costs around  per hour. There is also park and ride available around the outskirts of the town.
+
+If you don't have your own...
+  3. Aachen > Get in (score=0.05590000003576279)
+     Smaller airports within reasonable distance are Weeze () in Germany, Eindhoven airport () in the Netherlands, and "Brussels" South Charleroi Airport (...
+  4. Aachen > Drink (score=0.008700000122189522)
+     There's no need to order your drinks at the bar when in Aachen - simply take a seat and a member of staff will come over to take your order. They'll w...
+  5. Abbeyleix > See (score=0.0006000000284984708)
+     Durrow is an attractive small village 10 km south of Abbeyleix on N77, but its main sight the castle is now a plush hotel, see Sleep. Durrow Abbey isn...
+
+--- ANALYSIS ---
+Outcome: STRONG FIX. The top FOUR results are now all Aachen; the wrong-city
+  chunks ('s-Hertogenbosch, Abancay) that topped the hybrid list are pushed out.
+What the re-ranker did: it read each (question, chunk) pair jointly and scored
+  true relevance to "what is there to see in Aachen?". It correctly promoted the
+  Aachen "Get around" chunk (exploring the old town on foot) to #1 with a
+  confident 0.856, and demoted the off-topic cities.
+Recall vs precision: this is the PRECISION stage. Recall was already fixed by
+  hybrid (Aachen was present at #2-3); re-ranking fixed the ORDER, putting the
+  best Aachen chunk first.
+Score signal: note the steep score drop-off (0.856 -> 0.300 -> 0.056 -> ...).
+  The cross-encoder is confidently separating the one strong answer from weaker
+  ones — exactly the discriminating signal a bi-encoder similarity lacked.
+The full arc for this query:
+  Stage 1 (vector): NO Aachen at all -> "I don't have enough information" (recall fail)
+  Stage 2a (hybrid): Aachen present at #2-3 but wrong city at #1 (recall fixed, precision off)
+  Stage 2b (rerank): Aachen fills the top 4, best chunk at #1 (precision fixed)
+One line: missed it -> found it, mis-ordered -> ordered it right.
+
+============================================
+
+Q2:
+"how do I get around in Aarhus?"
+A2:
+
+HYBRID order (before re-ranking):
+  1. Aarau > Get around
+  2. Aalborg > Get around
+  3. Abastumani > Get in
+  4. Aarhus > Get in
+  5. Abaiang > Do
+
+RE-RANKED order (after FlashRank):
+  1. Aarhus > Get in (score=0.963100016117096)
+     By train
+Arriving at the Aarhus Central Station.
+ 
+
+It is also possible to catch a train to other parts of the Jutland peninsula from Aarhus. There ar...
+  2. Aarhus > Eat (score=0.8618999719619751)
+     Cafés are numerous
+The majority of cafés in Aarhus are unique, each with their own individual charm and character, and you'll find an emphasis on high...
+  3. Aarhus > Understand (score=0.6328999996185303)
+     Orientation
+Aarhus C
+Aarhus C
+Aarhus City is the central district and the most active area of the city with several interesting and special neighbourh...
+  4. Aarhus > Drink (score=0.1665000021457672)
+     Ceres TOP pilsner is the de rigueur beer in bodegaer and værtshuse, but other alcoholic beverages are usually available too, along with coffee and sof...
+  5. Aarhus > Drink (score=0.06759999692440033)
+     Many Aarhus bars change concept and/or owners quite often, some every 2-3 years or so, while other spots close and new ones emerge. The listing below ...
+
+--- ANALYSIS ---
+( Hardest case)
+Outcome: STRONG FIX — the hardest case, well handled. Before, the WRONG cities
+  (Aarau, Aalborg, Abastumani) topped the list and the real Aarhus chunk was
+  buried at #4. After re-ranking, the top FIVE are ALL Aarhus.
+What the re-ranker did: it understood the question is specifically about AARHUS,
+  not just "getting around a place." The Aarhus "Get in" chunk (trains, Aarhus
+  Central Station) scored 0.963 — the cross-encoder recognized it genuinely
+  answers "how do I get around in Aarhus" far better than "Aarau buses" did. The
+  similar-looking wrong cities (Aarau/Aalborg) that fooled BM25 are gone.
+Recall vs precision: PRECISION stage. Hybrid had achieved recall (Aarhus present
+  at #4); re-ranking corrected the ordering decisively (Aarhus now #1).
+Why this is the best illustration: this query had TWO traps — a generic phrase
+  ("get around" shared by every city's section) and near-identical city names
+  (Aarhus vs Aarau vs Aalborg). Hybrid couldn't separate them; the cross-encoder,
+  reading the full question against each chunk, could. This is the clearest proof
+  of why a cross-encoder beats bi-encoder similarity on nuanced relevance.
+Honest note: the #1 chunk is labeled "Get in" (arrival by train) rather than a
+  pure "Get around" (local transport) chunk — relevant, but a reminder that
+  section labels aren't a perfect proxy for intent. Results 2-5 (Eat/Understand/
+  Drink) are Aarhus but less on-topic for transport; on the small 20-article
+  corpus there simply isn't a rich Aarhus "Get around" chunk to surface. Expected
+  to improve on the full corpus.
+The full arc for this query:
+  Stage 1 (vector): wrong cities, Aarhus lost entirely (recall fail)
+  Stage 2a (hybrid): Aarhus present at #4, wrong cities above it (recall fixed, precision off)
+  Stage 2b (rerank): all top 5 are Aarhus, best at #1 (precision fixed)
+=============================================
+Test with a more conceptual question (which vector search handles well)
+Q3:
+where can I walk around a historic medieval city center?
+A3:
+HYBRID order (before re-ranking):
+  1. Aarhus > See
+  2. 's-Hertogenbosch > See
+  3. 's-Hertogenbosch > Get around
+  4. Aachen > Introduction
+  5. Aalborg > Get around
+
+RE-RANKED order (after FlashRank):
+  1. 's-Hertogenbosch > See (score=0.9983000159263611)
+     's-Hertogenbosch is a medieval city and among the oldest cities in the Netherlands. As the city center is historically protected there are still a lot...
+  2. 's-Hertogenbosch > Get around (score=0.8402000069618225)
+     Almost every street in the historic centre is worth simply strolling along for great views
+On foot
+Everything within the city center is reachable by f...
+  3. Aachen > Introduction (score=0.8187000155448914)
+     Apart from its medieval significance and a wealth of preserved artefacts, Aachen is also known for its springs, which have been attracting visitors si...
+  4. Aarhus > See (score=0.7925999760627747)
+     Many attractions and events in Aarhus are free, and there is an interesting street life, so even on a budget you can have an enjoyable experience.
+
+Hi...
+  5. Aarhus > Go next (score=0.5239999890327454)
+     Djursland is the "nose" of Jutland immediately northeast of Aarhus, a thinly-populated rural area where folks have made a living farming and fishing f...
+
+--- ANALYSIS ---
+Outcome: IMPROVED ORDERING on an already-good result. Hybrid had ranked a
+  weaker Aarhus "See" chunk (free attractions / street life) at #1. Re-ranking
+  promoted the genuinely on-topic 's-Hertogenbosch "See" chunk ("a medieval city
+  ... historically protected city center") to #1 with a near-perfect 0.998, and
+  paired it with the walkable "Get around" chunk at #2.
+What the re-ranker did: even when retrieval was already decent, the cross-encoder
+  sharpened the TOP — it recognized the chunk that explicitly mentions a medieval,
+  historically-protected centre is the best match for "walk around a historic
+  medieval city center", over a generic "free attractions" chunk.
+Recall vs precision: recall was fine at both stages; re-ranking still improved
+  PRECISION by putting the most on-topic chunk first and clustering the strong
+  walkable/medieval chunks (#1-3) above the weaker ones.
+Key point: re-ranking doesn't only rescue failures — it also refines
+  already-good results. And it did NOT harm the conceptual query that vector
+  search handled well, confirming the stages compose cleanly.
+ 
+=============================================
+STAGE 2b TAKEAWAY
+=============================================
+FlashRank cross-encoder re-ranking fixed the PRECISION gap left by hybrid search,
+across all three queries:
+  - Q1 (Aachen): top 4 now all Aachen; best chunk #1 (0.856).
+  - Q2 (Aarhus): hardest case — all top 5 now Aarhus; trains chunk #1 (0.963).
+  - Q3 (conceptual): already good, sharpened — best medieval/walkable chunk #1 (0.998).
+ 
+THE COMPLETE RETRIEVAL STORY (three stages):
+  Stage 1  Vector only   -> good on concepts, FAILS on proper nouns (recall gap)
+  Stage 2a Hybrid (BM25+vector+RRF) -> fixes recall (right chunks present), order imperfect
+  Stage 2b Re-rank (cross-encoder)  -> fixes precision (best chunk ranked first)
+ 
+Each stage addresses the previous stage's weakness:
+  bi-encoder retrieval for RECALL (fast, broad) -> cross-encoder re-rank for
+  PRECISION (slow, accurate, over a small candidate set).
+ 
+Caveats to mention honestly:
+  - Small 20-article dev corpus exaggerates near-duplicate city-name confusion and
+    limits how on-topic deep results can be; the full corpus reduces this.
+  - Section labels ("Get in" vs "Get around") aren't a perfect proxy for intent.
