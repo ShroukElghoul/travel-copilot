@@ -7,6 +7,7 @@ import httpx
 # HTTPException — raised inside a route to send a clean HTTP error response
 #                 (status code + message) instead of a raw Python traceback.
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 # BaseModel — Pydantic base class. Any class that inherits from it gets:
 #   - automatic JSON parsing (request body → Python object)
@@ -25,6 +26,23 @@ from ..agent import ask_agent
 # run: poetry run uvicorn src.travel_copilot.api.main:app
 # Everything — routes, middleware, docs — hangs off this one object.
 app = FastAPI()
+
+# --- CORS MIDDLEWARE ----------------------------------------------------------
+# Browsers enforce a security rule: a page from one origin (e.g. file://, or
+# localhost:3000) cannot call an API on a different origin (localhost:8000)
+# unless the server explicitly allows it.
+#
+# allow_origins=["*"]  — accept requests from ANY origin. Fine for local dev
+#                        and portfolio demos. In production you would list only
+#                        your actual frontend URL (e.g. "https://myapp.com").
+# allow_methods=["*"]  — allow all HTTP verbs (GET, POST, etc.).
+# allow_headers=["*"]  — allow all request headers (e.g. Content-Type).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # --- REQUEST / RESPONSE MODELS -----------------------------------------------

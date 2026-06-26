@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Travel Copilot</title>
+</head>
+<body>
+  <h1>Travel Copilot</h1>
+
+  <input id="question" type="text" placeholder="Ask a travel question..." style="width: 400px" />
+  <button onclick="ask()">Ask</button>
+
+  <p id="status"></p>
+  <p id="answer"></p>
+
+  <script>
+    async function ask() {
+      // Read what the user typed
+      const question = document.getElementById("question").value;
+
+      // Show a loading message while we wait for the API
+      document.getElementById("status").innerText = "Thinking...";
+      document.getElementById("answer").innerText = "";
+
+      // Send POST /ask to our FastAPI server
+      const response = await fetch("http://localhost:8000/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: question })
+      });
+
+      // Parse the JSON response body
+      const data = await response.json();
+
+      // Show the answer
+      document.getElementById("status").innerText = "";
+      document.getElementById("answer").innerText = data.answer;
+    }
+  </script>
+</body>
+</html>

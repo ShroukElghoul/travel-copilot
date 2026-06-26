@@ -2,7 +2,7 @@
 
 A Retrieval-Augmented Generation (RAG) system that answers travel questions grounded in real travel-guide content, with citations. Built over the [Wikivoyage](https://en.wikivoyage.org) corpus, it combines hybrid retrieval, cross-encoder re-ranking, and tool-using generation, with a clean, provider-agnostic architecture.
 
-> **Status:** The RAG core is complete and working. The project is actively being extended into a deployed, full-stack GenAI web application (FastAPI API + Next.js front-end on Azure) — see [Roadmap](#roadmap).
+> **Status:** The RAG core is complete. A FastAPI backend now exposes it as a REST API. The project is being extended into a fully deployed, full-stack GenAI web application (Next.js front-end + Azure) — see [Roadmap](#roadmap).
 
 ---
 
@@ -41,6 +41,7 @@ Each stage addresses the previous stage's weakness — a clear recall-then-preci
 ## Tech stack
 
 - **Language:** Python 3.11 (Poetry for dependency management)
+- **API:** FastAPI + Uvicorn — REST API with Pydantic validation and auto-generated OpenAPI docs
 - **LLM / embeddings:** Ollama (local) — `llama3.1`, `nomic-embed-text`; architecture supports Azure OpenAI
 - **Vector store:** ChromaDB (cosine similarity, HNSW index)
 - **Retrieval:** BM25 (`rank-bm25`) + dense vectors, fused with RRF; FlashRank cross-encoder re-ranking
@@ -53,6 +54,8 @@ Each stage addresses the previous stage's weakness — a clear recall-then-preci
 src/travel_copilot/
 ├── config.py              # settings + provider switch (data only)
 ├── llm.py                 # single boundary for all LLM/embedding calls
+├── api/
+│   └── main.py            # FastAPI app: GET /health, POST /ask
 ├── ingestion/
 │   ├── parse.py           # streaming XML parse + markup cleaning
 │   ├── chunk.py           # section-aware chunking
@@ -65,6 +68,7 @@ scripts/
 ├── ask.py                 # full RAG loop: question → grounded, cited answer
 └── peek.py                # inspect the vector store
 results/                   # staged retrieval evaluation (before/after)
+index.html                 # minimal browser UI for local testing (no framework)
 ```
 
 ## Running it
@@ -80,15 +84,20 @@ ollama pull nomic-embed-text
 # Build the index from a Wikivoyage dump placed in data/
 poetry run python -m src.travel_copilot.ingestion.index
 
-# Ask a question
+# Ask a question via CLI
 poetry run python -m scripts.ask "where can I walk around a historic medieval city centre?"
+
+# Start the API server
+poetry run uvicorn src.travel_copilot.api.main:app --reload
+# API available at http://localhost:8000
+# Interactive docs at http://localhost:8000/docs
 ```
 
 ## Roadmap
 
 The RAG core is complete. The project is being extended into a full-stack, deployable GenAI web application:
 
-- [ ] **FastAPI** backend exposing the copilot as a REST API
+- [x] **FastAPI** backend exposing the copilot as a REST API (`GET /health`, `POST /ask`)
 - [ ] **Next.js + TypeScript** front-end (chat UI)
 - [ ] **Docker** containerization and deployment to **Azure**
 - [ ] **PostgreSQL + pgvector** for relational data and vector storage
