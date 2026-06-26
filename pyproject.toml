@@ -17,7 +17,8 @@ dependencies = [
     "simpleeval (>=1.0.7,<2.0.0)",
     "langgraph (>=1.2.6,<2.0.0)",
     "langchain-ollama (>=1.1.0,<2.0.0)",
-    "fastapi[standard] (>=0.138.0,<0.139.0)"
+    "fastapi[standard] (>=0.138.0,<0.139.0)",
+    "httpx (>=0.28.1,<0.29.0)"
 ]
 
 
