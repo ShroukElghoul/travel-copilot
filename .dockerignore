@@ -1,0 +1,27 @@
+# Version control
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Poetry / virtualenv (not needed — we use requirements.txt in Docker)
+.venv/
+poetry.lock
+pyproject.toml
+
+# Large data files — too big for the image, mounted as volumes instead
+data/
+chroma_db/
+
+# Dev-only files
+.env
+*.env
+index.html
+architecture_diagram.md
+PROJECT_CONTEXT.md
+results/

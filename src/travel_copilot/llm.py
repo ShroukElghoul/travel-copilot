@@ -10,6 +10,11 @@ from typing import Generator, Optional
 
 from . import config
 
+# A single Ollama client pointed at the configured base URL.
+# Using a Client instance (instead of module-level ollama.chat()) lets us pass
+# a custom host — required when running inside Docker where localhost != host.
+_ollama_client = ollama.Client(host=config.OLLAMA_BASE_URL)
+
 
 # ===========================================================================
 # CHAT (text generation)
@@ -26,7 +31,7 @@ def _call_ollama(messages: list, json_mode: bool) -> Generator[str, None, None]:
         kwargs["format"] = "json"
 
     try:
-        stream = ollama.chat(**kwargs)
+        stream = _ollama_client.chat(**kwargs)
         for chunk in stream:
             yield chunk["message"]["content"]
     except ConnectionError as exc:
@@ -88,7 +93,7 @@ def _embed_ollama(text: str) -> list[float]:
     """Provider-specific embedding call for Ollama."""
     try:
         # ollama.embeddings returns a dict; the vector is under "embedding".
-        response = ollama.embeddings(model=config.EMBED_MODEL, prompt=text)
+        response = _ollama_client.embeddings(model=config.EMBED_MODEL, prompt=text)
         return response["embedding"]
     except ConnectionError as exc:
         raise RuntimeError(

@@ -28,7 +28,7 @@ class AgentState(TypedDict):
 
 # --- MODEL WITH TOOLS BOUND -------------------------------------------------
 _tools = [search_travel_guides, calculate]
-_model = ChatOllama(model=config.CHAT_MODEL, temperature=0)
+_model = ChatOllama(model=config.CHAT_MODEL, temperature=0, base_url=config.OLLAMA_BASE_URL)
 _model_with_tools = _model.bind_tools(_tools)
 
 SYSTEM_PROMPT = SystemMessage(content=(

@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .                        # build the image from the Dockerfile in this directory
+    ports:
+      - "8000:8000"                 # map host port 8000 → container port 8000
+    volumes:
+      - ./chroma_db:/app/chroma_db  # mount the vector DB from host into container
+                                    # so data persists across container restarts
+    environment:
+      # Override localhost with the Docker-provided hostname that points to the
+      # host machine — required so the container can reach Ollama running on
+      # your Windows machine (localhost inside a container = the container itself)
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Linux compatibility (no-op on Windows/Mac)

@@ -18,6 +18,41 @@ The system separates two flows:
 
 **Query (runtime):** `question → hybrid retrieval → re-ranking → grounded, cited answer`
 
+### Deployment architecture (Phase 3 — Docker)
+
+```mermaid
+flowchart TD
+    classDef hostClass fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef containerClass fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
+    classDef processClass fill:#fff3e0,stroke:#e65100,stroke-width:1px;
+
+    subgraph Host["Your Windows Machine (Host)"]
+        Browser["🌐 Your Browser<br>(Runs index.html)"]:::processClass
+        Ollama["🦙 Ollama Server<br>(Listens on localhost:11434)<br>llama3.1 + nomic-embed-text"]:::processClass
+        ChromaVolume["📂 ./chroma_db directory<br>(Saved on your hard drive,<br>mounted into container)"]:::processClass
+    end
+
+    subgraph Docker["Docker Engine"]
+        subgraph Container["🐳 FastAPI Container"]
+            Uvicorn["🔌 Uvicorn Web Server<br>(Listens on 0.0.0.0:8000)"]:::processClass
+            FastAPI["🐍 FastAPI Application<br>LangGraph agent<br>→ Hybrid retrieval + Reranking<br>→ ChromaDB client"]:::processClass
+        end
+    end
+
+    Browser -- "1. Sends request to<br>http://localhost:8000" --> Uvicorn
+    Uvicorn -- "2. Hands request to" --> FastAPI
+    FastAPI -- "3. Calls LLM via OLLAMA_BASE_URL<br>(host.docker.internal:11434)" --> Ollama
+    FastAPI -- "4. Reads vectors from<br>/app/chroma_db" --> ChromaVolume
+
+    class Host hostClass;
+    class Container containerClass;
+```
+
+**Key routing rules:**
+- Browser → container: Docker intercepts `localhost:8000` on the host and forwards it to Uvicorn inside the container
+- Container → Ollama: `host.docker.internal` is a Docker-provided hostname that resolves to the host machine; set via `OLLAMA_BASE_URL` env var
+- ChromaDB: runs as an embedded library inside the container; the `chroma_db` directory is mounted as a volume so data persists across container restarts
+
 ### Key design decisions
 
 - **Provider-agnostic LLM access.** All model calls (chat + embeddings) go through a single module with a `PROVIDER` switch, so swapping from local Ollama to Azure OpenAI is a one-line change. Implementation details never leak past this boundary.
@@ -73,13 +108,31 @@ index.html                 # minimal browser UI for local testing (no framework)
 
 ## Running it
 
+### Prerequisites
+- [Ollama](https://ollama.com) installed and running with the required models:
+```bash
+ollama pull llama3.1
+ollama pull nomic-embed-text
+```
+
+### Option 1 — Docker (recommended)
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop).
+
+```bash
+# Build and start the API container
+docker compose up
+
+# API available at http://localhost:8000
+# Interactive docs at http://localhost:8000/docs
+```
+
+> On Windows/Mac, Docker routes Ollama calls via `host.docker.internal` automatically (configured in `docker-compose.yml`). No extra setup needed.
+
+### Option 2 — Local (development)
+
 ```bash
 # Install dependencies
 poetry install
-
-# Pull local models (requires Ollama)
-ollama pull llama3.1
-ollama pull nomic-embed-text
 
 # Build the index from a Wikivoyage dump placed in data/
 poetry run python -m src.travel_copilot.ingestion.index
@@ -87,7 +140,7 @@ poetry run python -m src.travel_copilot.ingestion.index
 # Ask a question via CLI
 poetry run python -m scripts.ask "where can I walk around a historic medieval city centre?"
 
-# Start the API server
+# Start the API server with live reload
 poetry run uvicorn src.travel_copilot.api.main:app --reload
 # API available at http://localhost:8000
 # Interactive docs at http://localhost:8000/docs
@@ -99,7 +152,7 @@ The RAG core is complete. The project is being extended into a full-stack, deplo
 
 - [x] **FastAPI** backend exposing the copilot as a REST API (`GET /health`, `POST /ask`)
 - [ ] **Next.js + TypeScript** front-end (chat UI)
-- [ ] **Docker** containerization and deployment to **Azure**
+- [x] **Docker** containerization (`Dockerfile`, `docker-compose.yml`, CORS, configurable Ollama URL)
 - [ ] **PostgreSQL + pgvector** for relational data and vector storage
 - [ ] CI/CD pipeline (GitHub Actions)
 - [ ] Evaluation harness (RAGAS) and observability

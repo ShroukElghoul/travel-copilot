@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 # Base directory = project root.
@@ -13,6 +14,11 @@ PROVIDER = "ollama"   # "ollama" | "azure"
 # Ollama (local, free — used for the sprint)
 OLLAMA_CHAT_MODEL = "llama3.1"
 OLLAMA_EMBED_MODEL = "nomic-embed-text"
+# Base URL for the Ollama server. Read from environment variable so it can be
+# overridden at runtime — critical for Docker, where "localhost" inside the
+# container refers to the container itself, not the host machine running Ollama.
+# Windows/Mac Docker fix: set OLLAMA_BASE_URL=http://host.docker.internal:11434
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 # Azure OpenAI (placeholder for later; endpoint/key would come from .env)
 AZURE_CHAT_MODEL = "gpt-4o"
